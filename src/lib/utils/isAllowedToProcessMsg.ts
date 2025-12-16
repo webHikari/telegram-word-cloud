@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { blacklist } from "../../db/schema.ts"
+import { blacklist } from "../db/schema.ts"
 import { eq } from 'drizzle-orm';
 const db = drizzle(`postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@localhost:${process.env.DB_PORT}/${process.env.DB_NAME}`!);
 

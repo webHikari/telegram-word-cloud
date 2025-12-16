@@ -2,7 +2,7 @@ import { Bot } from "grammy";
 
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { last24hrChanges, wordsTable, last24hrWords, blacklist } from "./db/schema.ts"
+import { last24hrChanges, wordsTable, last24hrWords, blacklist } from "./lib/db/schema.ts"
 import { sql, eq } from "drizzle-orm";
 const db = drizzle(`postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@localhost:${process.env.DB_PORT}/${process.env.DB_NAME}`!);
 
@@ -18,6 +18,7 @@ if (!TELEGRAM_BOT_TOKEN) {
 
 const bot = new Bot(TELEGRAM_BOT_TOKEN); 
 
+// save data to database
 bot.on("message", async (ctx) => {
     const message = ctx.message.text
     if (!message) return
@@ -69,6 +70,7 @@ bot.on("message", async (ctx) => {
     }
 });
 
+// add user to blacklist (delete data and avoid insert data from this user)
 bot.command("dont_save_my_data", async (ctx) => {
     const user_id = ctx.from?.id;
     if (!user_id) return;
@@ -90,6 +92,7 @@ bot.command("dont_save_my_data", async (ctx) => {
     await ctx.reply("Твои данные больше не сохраняются + удалены\n\nЕсли не хотел(а) это писать, то и нехуй было\n/save_my_data включает сбор данных обратно");
 });
 
+// remove user from blacklist (data now can be added from this user)
 bot.command("save_my_data", async (ctx) => {
     const user_id = ctx.from?.id;
     if (!user_id) return;

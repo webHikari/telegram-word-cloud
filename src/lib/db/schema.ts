@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, json, timestamp, bigint, boolean } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, json, timestamp, bigint, boolean, unique } from "drizzle-orm/pg-core";
 
 export const wordsTable = pgTable("words", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -6,6 +6,10 @@ export const wordsTable = pgTable("words", {
     freq: integer().notNull().default(1),
     userID: bigint({ mode: 'number' }).notNull(),
     chatID: bigint({ mode: 'number' }).notNull(),
+}, (table) => {
+    return {
+        uniqueWordPerUserChat: unique('words_word_userid_chatid_unique').on(table.word, table.userID, table.chatID)
+    }
 });
 
 export const last24hrWords = pgTable("last24hrWords", {
@@ -14,8 +18,11 @@ export const last24hrWords = pgTable("last24hrWords", {
     freq: integer().notNull().default(1),
     userID: bigint({ mode: 'number' }).notNull(),
     chatID: bigint({ mode: 'number' }).notNull(),
+}, (table) => {
+    return {
+        uniqueLast24hrWords: unique('last24hrwords_word_userid_chatid_unique').on(table.word, table.userID, table.chatID)
+    }
 });
-
 export const last24hrChanges = pgTable("last24hrChanges", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     message: json().notNull(),
