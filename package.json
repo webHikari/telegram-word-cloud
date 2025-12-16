@@ -18,6 +18,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "canvas": "^3.2.0",
     "colors": "^1.4.0",
     "dotenv": "^17.2.3",
     "grammy": "^1.38.4"

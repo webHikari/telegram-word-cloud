@@ -1,4 +1,5 @@
 import { Bot } from "grammy";
+
 import dotenv from "dotenv"
 dotenv.config()
 
@@ -15,4 +16,4 @@ bot.on("message", async (ctx) => {
     // nothing for now
 });
 
-bot.start();
+// bot.start();
