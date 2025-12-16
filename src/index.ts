@@ -1,4 +1,5 @@
 import { Bot } from "grammy";
+import cron from 'node-cron';
 
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -10,13 +11,11 @@ const db = drizzle(`postgresql://${process.env.DB_USER}:${process.env.DB_PASSWOR
 import { formatTextToWordsDict } from "./lib/utils/formatTextToWordsDict.ts";
 import { isAllowedToProcessMsg } from "./lib/utils/isAllowedToProcessMsg.ts";
 
-const { TELEGRAM_BOT_TOKEN } = process.env
-
-if (!TELEGRAM_BOT_TOKEN) {
+if (!process.env.TELEGRAM_BOT_TOKEN) {
     throw new Error("Telegram bot token is not set, you need to provide it to .env file like in .env.example")
 }
 
-const bot = new Bot(TELEGRAM_BOT_TOKEN); 
+const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN); 
 
 // save data to database
 bot.on("message", async (ctx) => {
@@ -27,7 +26,15 @@ bot.on("message", async (ctx) => {
     const canSave = await isAllowedToProcessMsg(user_id)
     if (!canSave) return
     
+    // if ALLOWED_CHAT_ID not set, then it will process messages from any chat
+    // is set, then will not process
     const chat_id = ctx.message.chat.id
+    if (process.env.ALLOWED_CHAT_ID) {
+        if (chat_id.toString() !== process.env.ALLOWED_CHAT_ID) {
+            return
+        }
+    }
+
     const timestamp = ctx.message.date
 
     const date = new Date(timestamp * 1000)
@@ -46,6 +53,7 @@ bot.on("message", async (ctx) => {
     await db.insert(last24hrChanges).values(last24hrChangesInput)
 
     for (const wordItem of wordsFreq) {
+        // save to all words
         await db.insert(wordsTable).values({
             word: wordItem.word,
             freq: wordItem.freq,
@@ -55,9 +63,8 @@ bot.on("message", async (ctx) => {
             target: [wordsTable.word, wordsTable.userID, wordsTable.chatID],
             set: { freq: sql`${wordsTable.freq} + ${wordItem.freq}` }
         })
-    }
-
-    for (const wordItem of wordsFreq) {
+        
+        // save to 24hr
         await db.insert(last24hrWords).values({
             word: wordItem.word,
             freq: wordItem.freq,
@@ -109,3 +116,33 @@ bot.command("save_my_data", async (ctx) => {
 });
 
 bot.start();
+
+// cron for deleting overtimed messages from 24hr tables
+cron.schedule('* * * * *', async () => {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const oldChanges = await db.select()
+        .from(last24hrChanges)
+        .where(sql`${last24hrChanges.sendedAt} < ${twentyFourHoursAgo}`);
+    
+    for (const change of oldChanges) {
+        try {
+            const wordsData: Array<{word: string, freq: number}> = JSON.parse(change.message as string);
+            
+            for (const wordItem of wordsData) {
+                await db.update(last24hrWords)
+                    .set({ freq: sql`${last24hrWords.freq} - ${wordItem.freq}` })
+                    .where(
+                        sql`${last24hrWords.word} = ${wordItem.word} 
+                        AND ${last24hrWords.userID} = ${change.userID} 
+                        AND ${last24hrWords.chatID} = ${change.chatID}`
+                    );
+            }
+            
+            await db.delete(last24hrChanges).where(sql`${last24hrChanges.id} = ${change.id}`);
+            
+        } catch (error) {
+            console.error('/index.ts/cron.schedule error: ', error);
+        }
+    }
+});
