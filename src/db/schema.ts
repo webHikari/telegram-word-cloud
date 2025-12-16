@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, json, timestamp, bigint } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, json, timestamp, bigint, boolean } from "drizzle-orm/pg-core";
 
 export const wordsTable = pgTable("words", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -23,3 +23,9 @@ export const last24hrChanges = pgTable("last24hrChanges", {
     chatID: bigint({ mode: 'number' }).notNull(),
     sendedAt: timestamp().notNull()
 });
+
+export const blacklist = pgTable("blacklist", {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    userID: bigint({ mode: 'number' }).notNull(),
+    canSave: boolean().notNull().default(false)
+})
