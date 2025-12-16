@@ -23,6 +23,7 @@ export const last24hrWords = pgTable("last24hrWords", {
         uniqueLast24hrWords: unique('last24hrwords_word_userid_chatid_unique').on(table.word, table.userID, table.chatID)
     }
 });
+
 export const last24hrChanges = pgTable("last24hrChanges", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     message: json().notNull(),

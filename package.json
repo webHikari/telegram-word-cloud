@@ -21,6 +21,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@grammyjs/chat-members": "^1.2.0",
     "canvas": "^3.2.0",
     "colors": "^1.4.0",
     "dotenv": "^17.2.3",
