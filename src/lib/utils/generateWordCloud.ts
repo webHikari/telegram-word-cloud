@@ -15,7 +15,15 @@ type PlacedWord = {
     fontSize: number
 }
 
-export function createWordCloud(wordCounts: WordItem[]): void {
+export function createWordCloud(wordCounts: WordItem[], fileName: string): void {
+    if (!wordCounts) {
+        throw new Error("Words was not provided to /lib/utils/generateWordCloud.ts/createWordCloud\nWord cloud was not created")
+    }
+    
+    if (!fileName) {
+        throw new Error("Filename was not provided to /lib/utils/generateWordCloud.ts/createWordCloud\nWord cloud was not created")
+    }
+
     const WIDTH = 3840
     const HEIGHT = 2160
     const canvas = createCanvas(WIDTH, HEIGHT)
@@ -79,7 +87,7 @@ export function createWordCloud(wordCounts: WordItem[]): void {
         ctx.fillText(word, x, y)
     })
 
-    const out = fs.createWriteStream('wordcloud.png')
+    const out = fs.createWriteStream(fileName.indexOf(".png") !== -1 ? fileName : `${fileName}.png`)
     const stream = canvas.createPNGStream()
     stream.pipe(out)
     out.on('finish', () => console.log('wordcloud created'))
